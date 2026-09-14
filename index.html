@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+#buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 15px auto;
+}
+
+#GameOverText {
+  
+  color: darkred;
+  font-weight: bold;
+  
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+
+.gameButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    padding: 12px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(135deg, red, #cc1111);
+    border: 2px solid red;
+    border-radius: 12px;
+    box-shadow:
+        0 0 10px #cc1111,
+        0 0 25px #bb1111;
+    cursor: pointer;
+    transition: 0.15s;
+    height: 60px;
+    
+    
+}
+
+.gameButton:hover {
+    
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow:
+        0 0 15px darkred,
+        0 0 35px darkred;
+}
+
+.gameButton:active {
+    transform: translate(-50%, -50%) scale(0.85);
+}
+
+#speedBox {
+    width: 180px;
+    margin: px auto;
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg, #00cc44, #00ff88);
+    border: 2px solid #00ff66;
+    box-shadow:
+        0 0 10px #00ff66,
+        0 0 25px #00ff44;
+    font-weight: bold;
+    
+}
+
+#speedBox label {
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+#speed {
+    width: 120px;
+}
+#speed:hover {
+    transform: scale(1.08);
+    box-shadow:
+        0 0 15px #00ff66,
+        0 0 35px #00ff44;
+}
+
+#speedValue {
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.block {
+    width: 40px;
+    height: 40px;
+}
+
+#containerWrapper {
+    display: flex;
+    justify-content: center;
+}
+
+#container {
+    border-radius: 12px;
+    justify-items: center;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    width: 505px;
+    height: 505px;
+    
+    background: linear-gradient(to right bottom, #00bb00, #00ee00);
+    display: grid;
+    grid-template-columns: repeat(10, 50px);
+    grid-template-rows: repeat(10, 50px);
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="buttons">
+
+    
+    
+    <div id="speedBox">
+
+    <label for="speed">GAME SPEED</label>
+
+    <div>
+        <input
+            type="range"
+            id="speed"
+            min="100"
+            max="1000"
+            value="300"
+            step="50"
+            oninput="updateSpeed()"
+        >
+
+        <span id="speedValue">300 ms</span>
+    </div>
+
+</div>
+
+    
+
+</div>
+
+<div id="containerWrapper">
+    <div id="container">
+      
+        <button id="gameButton" class="gameButton" onclick="playGame()">
+        ▶ PLAY
+      </button>
+      <h1 id="GameOverText" >GAME OVER</h1>
+      
+      
+      
+      
+    </div>
+</div>
+
+<script>
+
+let gameSpeed = 300;
+let wallPass = false;
+let wormHeadPosY = 1;
+let wormHeadPosX = 1;
+
+let length = 1;
+
+let activeKey = 2;
+
+let gameOn = false;
+
+
+let gameTimer = null;
+
+let apples = [];
+let appleCount = 3;
+
+
+
+const container =
+    document.getElementById("container");
+
+function updateSpeed() {
+
+    gameSpeed =
+        Number(
+            document.getElementById("speed").value
+        );
+
+    document.getElementById("speedValue")
+        .textContent = gameSpeed + " ms";
+}
+
+for (let y = 0; y < 10; y++) {
+
+    for (let x = 0; x < 10; x++) {
+
+        const block =
+            document.createElement("div");
+
+        block.classList.add("block");
+
+        container.appendChild(block);
+
+        block.dataset.x = x;
+        block.dataset.y = y;
+
+        block.dataset.type = 0;
+        block.dataset.length = 0;
+    }
+}
+
+const blocks =
+    document.querySelectorAll(".block");
+
+document.addEventListener("keydown", function(event) {
+
+    if (event.code === "KeyW") {
+         if (activeKey != 2) activeKey = 1;
+    }
+
+    if (event.code === "KeyS") {
+        if  (activeKey != 1) activeKey = 2;
+    }
+
+    if (event.code === "KeyA") {
+        if  (activeKey != 4) activeKey = 3;
+    }
+
+    if (event.code === "KeyD") {
+         if (activeKey != 3) activeKey = 4;
+    }
+    if (event.code === "KeyT") {
+    wallPass = !wallPass;
+}
+
+});
+
+function playGame() {
+    
+    if (gameOn === false)
+    {
+        restartGame();
+    
+
+    
+    gameOn = true;
+    spawnApple();
+    
+    loop();
+    }
+    
+}
+
+function restartGame() {
+    container.style.marginTop = "0%";
+    container.style.width = "505px";
+    container.style.height = "505px";
+    container.style.borderRadius = "12px";
+    container.style.background = "linear-gradient(to right bottom, #00bb00, #00ee00)";
+    clearTimeout(gameTimer);
+    GameOverText.style.display = "none";
+    gameButton.style.display = "none";
+    wormHeadPosX = 1;
+    wormHeadPosY = 1;
+
+    length = 3;
+
+    activeKey = 2;
+
+   
+    
+
+    blocks.forEach(function(block) {
+        
+        block.dataset.length = 0;
+        block.dataset.type = 0;
+
+        block.style.backgroundColor =
+            "#009900";
+    });
+
+    
+
+    
+}
+
+function loop() {
+
+    if (gameOn === false) {
+        
+          
+        
+        return;
+    }
+
+    let upKey = 0;
+    let horiKey = 0;
+
+    if (activeKey == 1) {
+        upKey = -1;
+    }
+
+    else if (activeKey == 2) {
+        upKey = 1;
+    }
+
+    else {
+        upKey = 0;
+    }
+
+    if (activeKey == 3) {
+        horiKey = -1;
+    }
+
+    else if (activeKey == 4) {
+        horiKey = 1;
+    }
+
+    else {
+        horiKey = 0;
+    }
+
+    wormHeadPosX += horiKey;
+    wormHeadPosY += upKey;
+    let hitWorm = false;
+
+blocks.forEach(function(block) {
+
+    if (
+        Number(block.dataset.length) > 0 &&
+        Number(block.dataset.x) === wormHeadPosX &&
+        Number(block.dataset.y) === wormHeadPosY
+    ) {
+        hitWorm = true;
+    }
+
+});
+
+if (hitWorm) {
+    gameOver();
+    return;
+}
+    let appleEaten = false;
+for (let i = apples.length - 1; i >= 0; i--) {
+
+    if (
+        wormHeadPosX === apples[i].x &&
+        wormHeadPosY === apples[i].y
+    ) {
+
+        appleEaten = true;
+        length++;
+
+        apples.splice(i, 1);
+
+        spawnOneApple();
+    }
+}
+
+    
+
+    if (wallPass == true) {
+    if (wormHeadPosY < 0) wormHeadPosY = 9;
+    if (wormHeadPosY > 9) wormHeadPosY = 0;
+    if (wormHeadPosX < 0) wormHeadPosX = 9;
+    if (wormHeadPosX > 9) wormHeadPosX = 0;
+    }
+    else if (
+
+        wormHeadPosY < 0 ||
+        wormHeadPosY >= 10 ||
+        wormHeadPosX < 0 ||
+        wormHeadPosX >= 10
+    ) {
+
+        gameOver();
+        
+
+        return;
+    }
+
+    blocks.forEach(function(block) {
+
+        if (Number(block.dataset.length) > 0) {
+
+    if (!appleEaten) {
+        block.dataset.length =
+            Number(block.dataset.length) - 1;
+    }
+}
+
+
+
+if (Number(block.dataset.length) === 0) {
+    block.dataset.type = 0;
+}
+
+        
+block.style.backgroundImage = "none";
+        if (
+            block.dataset.x == wormHeadPosX &&
+            block.dataset.y == wormHeadPosY
+        ) {
+        
+
+            block.dataset.length = length;
+            block.dataset.type = 1;
+            block.style.backgroundImage = "url('https://models.spriters-resource.com/media/preview_icons/295/297786.png?updated=1755499693')";
+
+    block.style.backgroundSize = "contain";
+
+    block.style.backgroundPosition = "center";
+
+    block.style.backgroundRepeat = "no-repeat";
+    
+    if (activeKey == 3) {
+        block.style.transform = "rotate(-90deg)";
+    }
+
+    if (activeKey == 4) {
+        block.style.transform = "rotate(90deg)";
+    }
+
+    if (activeKey == 2) {
+        block.style.transform = "rotate(180deg)";
+    }
+
+    if (activeKey == 1) {
+        block.style.transform = "rotate(0deg)";
+    }
+        }
+
+        block.style.backgroundColor =
+            "#009900";
+            block.style.height = "40px";
+        block.style.width = "40px";
+        
+        
+
+        apples.forEach(function(apple) {
+
+    if (
+        Number(block.dataset.x) === apple.x &&
+        Number(block.dataset.y) === apple.y
+    ) {
+
+        block.style.backgroundColor = "red";
+        block.style.width = "40px";
+        block.style.height = "40px";
+
+        block.dataset.type = 3;
+    }
+
+});
+
+
+        if (Number(block.dataset.length) > 0) {
+
+    let green =
+        Math.min(
+            255,
+            50 + Number(block.dataset.length) * 5
+        );
+
+    let red =
+        Math.max(
+            0,
+            150 - Number(block.dataset.length) * 5
+        );
+
+    block.style.backgroundColor =
+        "rgb(" + red + "," + green + ",0)";
+        block.style.height = "51px";
+        block.style.width = "51px";
+        if (
+
+        block.dataset.x != wormHeadPosX ||
+
+        block.dataset.y != wormHeadPosY
+
+    ) {
+
+        block.style.backgroundImage = "none";
+
+    
+
+}
+}
+
+        if (
+            block.dataset.x == wormHeadPosX &&
+            block.dataset.y == wormHeadPosY
+        ) {
+
+            block.style.backgroundColor =
+                "brown";
+            block.style.width = "51px";
+            block.style.height = "51px";
+        }
+
+    });
+
+    
+
+    if (gameOn === true) {
+
+        gameTimer =
+            setTimeout(loop, gameSpeed);
+    }
+    
+}
+function spawnApple() {
+
+    apples = [];
+
+    for (let i = 0; i < appleCount; i++) {
+
+        spawnOneApple();
+
+    }
+}
+function spawnOneApple() {
+
+    let x;
+    let y;
+    let appleOnWorm;
+    let appleOnApple;
+
+    do {
+
+        x = Math.floor(Math.random() * 10);
+        y = Math.floor(Math.random() * 10);
+
+        appleOnWorm = false;
+        appleOnApple = false;
+
+        blocks.forEach(function(block) {
+
+            if (
+                Number(block.dataset.length) > 0 &&
+                Number(block.dataset.x) === x &&
+                Number(block.dataset.y) === y
+            ) {
+                appleOnWorm = true;
+            }
+
+        });
+
+        apples.forEach(function(apple) {
+
+            if (
+                apple.x === x &&
+                apple.y === y
+            ) {
+                appleOnApple = true;
+            }
+
+        });
+
+    } while (appleOnWorm || appleOnApple);
+
+    apples.push({
+        x: x,
+        y: y
+    });
+}
+
+
+
+
+function gameOver() {
+  
+  gameOn = false;
+
+  container.style.width = "300px";
+  container.style.height = "300px";
+  container.style.marginTop = "20%";
+  container.style.borderRadius = "30px";
+  container.style.background = "red";
+  gameButton.style.display = "block";
+  GameOverText.style.display = "block";
+  blocks.forEach(function(block) {
+  block.style.backgroundImage = "none";
+  block.style.backgroundColor = "transparent";
+  block.style.width = "40px";
+  block.style.height = "40px";
+  block.style.transform = "none";
+});
+
+
+  
+
+  
+}
+</script>
+
+</body>
+</html>
